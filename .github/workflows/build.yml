@@ -1,0 +1,44 @@
+name: Build TF2Arsenal
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Extract project ZIP
+        run: |
+          mkdir project
+          unzip -q TF2Arsenal-0.2.0-Final-Project.zip -d project
+
+      - name: Find project directory
+        run: |
+          PROJECT_DIR=$(dirname "$(find project -name build.gradle -type f -print -quit)")
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+
+      - name: Build mod
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          gradle --version
+          gradle build --no-daemon
+
+      - name: Upload JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: TF2Arsenal-JAR
+          path: ${{ env.PROJECT_DIR }}/build/libs/*.jar
+          if-no-files-found: error
